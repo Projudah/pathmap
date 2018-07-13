@@ -1,33 +1,46 @@
 import os
 
-pathmap = {}
 traversed = []
-
+moreleft = False
 
 def main():
-	start = "C:\\Users\\proju\\Desktop\\classes"
-	print(traverse(3,0,start))
-	print(traversed)
+	start = "C:\\Users\\proju\\Desktop"
+	print(traverse(0, 0, start))
+	print()
 
 
 '''for aestethic reasons, i'm implementing a breadth first search'''
+
+
 def traverse(depth, step, start):
+	global moreleft
 	os.chdir(start)
-	submap={}
+	submap = {}
 	traversed.append(start)
 	for file in os.listdir(start):
 		current = os.path.abspath(file)
-		# current = current.replace(os.sep,'/')
 		if step < depth:
-			if current in traversed:
-				pass
+			if os.path.isdir(current):
+				submap[file] = traverse(depth, step + 1, current)
+				os.chdir(start)
 			else:
-				if os.path.isdir(current):
-					submap[file]=traverse(depth, step + 1, current)
-					os.chdir(start)
-				else:
-					submap[file]={}
+				submap[file] = {}
+		else:
+			if os.path.isdir(current):
+				os.chdir(current)
+				for fileToCheck in os.listdir(current):
+					fullpath = os.path.abspath(fileToCheck)
+					if os.path.isdir(fullpath) and (fullpath not in traversed):
+						moreleft = True
+	if step == 0:
+		if moreleft:
+			moreleft = False
+			traverse(depth + 1, 0, start)
+		else:
+			print(submap)
+
 	return submap
+
 
 if __name__ == '__main__':
 	main()
