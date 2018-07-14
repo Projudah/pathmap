@@ -1,6 +1,7 @@
 import os
 import time
 from tkinter import *
+from tkinter import filedialog
 import threading
 
 
@@ -10,26 +11,29 @@ def traverse(depth, step, start):
 	# print('traversing', start, 'depth:', depth, 'step:', step)
 	os.chdir(start)
 	submap = {}
-	traversed.append(start)   #  if start is not in traversed, then add it
+	traversed.append(start)  # if start is not in traversed, then add it
 	count = 0
-	for file in os.listdir(start):
-		current = os.path.abspath(file)
-		if step < depth:
-			if os.path.isdir(current):
-				submap[file] = traverse(depth, step + 1, current)
+	try:
+		for file in os.listdir(start):
+			current = os.path.abspath(file)
+			if step < depth:
+				if os.path.isdir(current):
+					submap[file] = traverse(depth, step + 1, current)
+				else:
+					traversed.append(current)
+					submap[file] = {}
+					if depth - step == 1:
+						if (depth) not in depthWidth:
+							depthWidth[depth] = 0
+						else:
+							depthWidth[depth] += 0
 			else:
-				traversed.append(current)
-				submap[file] = {}
-				if depth - step == 1:
-					if (depth) not in depthWidth:
-						depthWidth[depth] = 1
-					else:
-						depthWidth[depth] += 1
-		else:
-			if current not in traversed:
-				count += 1
-				moreleft = True
-		os.chdir(start)
+				if current not in traversed:
+					count += 1
+					moreleft = True
+			os.chdir(start)
+	except BaseException as e:
+		print(str(e))
 
 	if step == depth:  # if i'm at the current depth
 		if (depth) in depthWidth:
@@ -42,49 +46,68 @@ def traverse(depth, step, start):
 		draw(depth, submap)
 		if moreleft:
 			moreleft = False
-			time.sleep(1)
+			time.sleep(0.5)
 			traverse(depth + 1, 1, start)
 		else:
-			print('_'*50,'\n',"DONE")
+			print('_' * 50, '\n', "DONE")
 
 	return submap
 
 
 def draw(depth, map):
 	canvas.delete('all')
-	# maxwidth = max(depthWidth, key=depthWidth.get)
+	maxwidth = max(depthWidth, key=depthWidth.get)
 
 	widthcount = [0] * (depth)
 
-	search(map, widthcount, depth, 1)
+	search(map, widthcount, depth, 1, maxwidth)
 
 
-def search(map, widthcount, maxdepth, depth, parentx=-1):
-	myX = (canvas.winfo_width() / depthWidth[depth-1]) * widthcount[depth-1] + ((canvas.winfo_width() / depthWidth[depth-1])/2)
+def search(map, widthcount, maxdepth, depth, maxwidth, parentx=-1):
+	percent = 0.2
+	myX = -1
+	myY = -1
+	cumulate = []
+
 	myY = (canvas.winfo_height() / maxdepth) * (maxdepth - depth)
 	myheight = canvas.winfo_height() / maxdepth
+	join = myheight * percent
+	if (depth - 1) >= maxwidth:
+		myX = (canvas.winfo_width() / depthWidth[depth - 1]) * widthcount[depth - 1] + (
+				(canvas.winfo_width() / depthWidth[depth - 1]) / 2)
 
-	canvas.create_line(myX, myY, myX, myY + myheight)
+		canvas.create_line(myX, myY + join, myX, myY + myheight)
+		if parentx >= 0:
+			canvas.create_line(myX, myY + myheight, parentx, (myY + myheight + join))
 
-	widthcount[depth-1] += 1
+	widthcount[depth - 1] += 1
 	for dir in map:
-		search(map[dir], widthcount, maxdepth, depth + 1, myX)
+		cumulate.append(search(map[dir], widthcount, maxdepth, depth + 1, maxwidth, myX))
 
+	if (depth - 1) < maxwidth:
+		if len(cumulate) == 0:
+			myX = (canvas.winfo_width() / 2)
+		else:
+			myX = (sum(cumulate) / float(len(cumulate)))
 
-	if parentx >= 0:
-		canvas.create_line(myX, myY, parentx, myY)
-
+		canvas.create_line(myX, myY + join, myX, myY + myheight)
+		if parentx < 0:
+			for loc in cumulate:
+				canvas.create_line(myX, myY + join, loc, myY)
+	return myX
 
 
 def main():
 	global traversed
-	global  depthWidth
+	global depthWidth
 	global moreleft
 	traversed = []
 	depthWidth = {}
 	moreleft = False
-	# start = "C:\\Users\\proju\\Desktop"
-	start = "D:\\Downloads\\school notes and slides"
+	start = "C:"
+	select = filedialog.askdirectory()
+	if select is not "":
+		start = select
 	run = threading.Thread(target=traverse, args=(1, 1, start))
 	run.daemon = True
 	run.start()
