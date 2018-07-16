@@ -11,7 +11,7 @@ def traverse(depth, step, start):
 	# print('traversing', start, 'depth:', depth, 'step:', step)
 	os.chdir(start)
 	submap = {}
-	traversed.append(start)  # if start is not in traversed, then add it
+	traversed[start]=start  # if start is not in traversed, then add it
 	count = 0
 	try:
 		for file in os.listdir(start):
@@ -20,7 +20,7 @@ def traverse(depth, step, start):
 				if os.path.isdir(current):
 					submap[file] = traverse(depth, step + 1, current)
 				else:
-					traversed.append(current)
+					traversed[current]=current
 					submap[file] = {}
 					if depth - step == 1:
 						if (depth) not in depthWidth:
@@ -49,7 +49,7 @@ def traverse(depth, step, start):
 			time.sleep(0.5)
 			traverse(depth + 1, 1, start)
 		else:
-			print('_' * 50, '\n', "DONE")
+			print('_' * 50, '\n', "DONE", start)
 
 	return submap
 
@@ -78,7 +78,7 @@ def search(map, widthcount, maxdepth, depth, maxwidth, parentx=-1):
 
 		canvas.create_line(myX, myY + join, myX, myY + myheight)
 		if parentx >= 0:
-			canvas.create_line(myX, myY + myheight, parentx, (myY + myheight + join))
+			canvas.create_line(myX, myY + myheight, parentx, (myY + myheight + join),fill='red')
 
 	widthcount[depth - 1] += 1
 	for dir in map:
@@ -93,7 +93,7 @@ def search(map, widthcount, maxdepth, depth, maxwidth, parentx=-1):
 		canvas.create_line(myX, myY + join, myX, myY + myheight)
 		if parentx < 0:
 			for loc in cumulate:
-				canvas.create_line(myX, myY + join, loc, myY)
+				canvas.create_line(myX, myY + join, loc, myY,fill='red')
 	return myX
 
 
@@ -101,7 +101,7 @@ def main():
 	global traversed
 	global depthWidth
 	global moreleft
-	traversed = []
+	traversed = {}
 	depthWidth = {}
 	moreleft = False
 	start = "C:"
@@ -114,7 +114,7 @@ def main():
 
 
 if __name__ == '__main__':
-	traversed = []
+	traversed = {}
 	depthWidth = {}
 	moreleft = False
 	frame = Tk()
